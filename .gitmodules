@@ -1,0 +1,3 @@
+[submodule "include/embedded-filesystem"]
+	path = include/embedded-filesystem
+	url = englund.mooo.com:/data/git/embedded-filesystem.git
