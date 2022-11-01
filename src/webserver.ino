@@ -9,6 +9,7 @@ ESP8266WebServer server(80);
 void webserver_setup() {
   server.on("/", ws_handle_root);
   server.on("/restart", ws_handle_restart);
+  server.on("/raw", ws_handle_raw);
 
   server.onNotFound(ws_handle_not_found);
 
@@ -25,6 +26,15 @@ void ws_handle_restart() {
   server.send(200, "text/plain", "restarting...");
   delay(500);
   ESP.restart();
+}
+
+void ws_handle_raw() {
+  char buf[BUF_SIZE + 1];
+  for (int i = 0; i < BUF_SIZE; i++) {
+    buf[i] = han_buffer[(i + han_write) % BUF_SIZE];
+  }
+  buf[BUF_SIZE] = 0;
+  server.send(200, "text/plain", buf);
 }
 
 String get_content_type(String uri) {

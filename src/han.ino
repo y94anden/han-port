@@ -1,4 +1,4 @@
-#define BUF_SIZE 256
+#define BUF_SIZE 768
 
 // Circular buffer for received data
 char han_buffer[BUF_SIZE];
