@@ -10,6 +10,7 @@ void webserver_setup() {
   server.on("/", ws_handle_root);
   server.on("/restart", ws_handle_restart);
   server.on("/raw", ws_handle_raw);
+  server.on("/rest/current", ws_handle_rest_last);
 
   server.onNotFound(ws_handle_not_found);
 
@@ -35,6 +36,59 @@ void ws_handle_raw() {
   }
   buf[BUF_SIZE] = 0;
   server.send(200, "text/plain", buf);
+}
+
+void send_milli_value(uint32_t value) {
+  char tmp[64];
+  uint32_t wholenumber = value / 1000;
+  sprintf(tmp, "%d.%03d", wholenumber, value - wholenumber * 1000);
+  server.sendContent(tmp);
+}
+
+void ws_handle_rest_last() {
+  if (han_last.time[0] == '\0') {
+    server.send(200, "text/json", "{\"error\":\"no data yet\"}");
+    return;
+  }
+  server.setContentLength(CONTENT_LENGTH_UNKNOWN);
+  server.sendHeader("Cache-Control", String("no-cache"));
+  server.send(200, "text/json", "{");
+
+  server.sendContent("\"time\":\"");
+  server.sendContent(han_last.time);
+  server.sendContent("\"");
+
+  server.sendContent(",\"meter\":");
+  send_milli_value(han_last.meter_Wh);
+
+  server.sendContent(",\"power\":");
+  send_milli_value(han_last.power_W);
+
+  server.sendContent(",\"power\":[");
+  send_milli_value(han_last.phasePower_W[0]);
+  server.sendContent(",");
+  send_milli_value(han_last.phasePower_W[1]);
+  server.sendContent(",");
+  send_milli_value(han_last.phasePower_W[2]);
+  server.sendContent("]");
+
+  server.sendContent(",\"voltage\":[");
+  send_milli_value(han_last.phaseVoltage_mV[0]);
+  server.sendContent(",");
+  send_milli_value(han_last.phaseVoltage_mV[1]);
+  server.sendContent(",");
+  send_milli_value(han_last.phaseVoltage_mV[2]);
+  server.sendContent("]");
+
+  server.sendContent(",\"current\":[");
+  send_milli_value(han_last.phaseCurrent_mA[0]);
+  server.sendContent(",");
+  send_milli_value(han_last.phaseCurrent_mA[1]);
+  server.sendContent(",");
+  send_milli_value(han_last.phaseCurrent_mA[2]);
+  server.sendContent("]");
+
+  server.sendContent("}");
 }
 
 String get_content_type(String uri) {
