@@ -11,6 +11,7 @@ void webserver_setup() {
   server.on("/restart", ws_handle_restart);
   server.on("/raw", ws_handle_raw);
   server.on("/rest/current", ws_handle_rest_last);
+  server.on("/history", ws_handle_history);
 
   server.onNotFound(ws_handle_not_found);
 
@@ -89,6 +90,23 @@ void ws_handle_rest_last() {
   server.sendContent("]");
 
   server.sendContent("}");
+}
+
+void ws_handle_history() {
+  int len = han_hist_wrapped ? HAN_HISTORY_BUF_LEN : han_hist_write;
+  server.setContentLength(len * 2); // 16 bit data
+
+  server.sendHeader("Cache-Control", String("no-cache"));
+  server.sendHeader("Access-Control-Allow-Origin", String("*"));
+
+  server.send(200, "application/octet-stream", "");
+  if (han_hist_wrapped) {
+    // Send the oldest data (that is soon to be overwritten)
+    server.sendContent((const char *)&han_history[han_hist_write],
+                       (HAN_HISTORY_BUF_LEN - han_hist_write) * 2);
+  }
+  // Send the data from 0 and up until latest.
+  server.sendContent((const char *)han_history, han_hist_write * 2);
 }
 
 String get_content_type(String uri) {

@@ -43,6 +43,14 @@ int han_write;
 int han_read;
 bool han_drop_junk;
 
+// Circular buffer for power history
+#define HAN_HISTORY_BUF_LEN 11600
+uint16_t han_history[HAN_HISTORY_BUF_LEN];
+int han_hist_write;
+bool han_hist_wrapped;
+uint32_t han_hist_sum;
+int han_hist_sum_count;
+
 typedef struct {
   char time[20];               // 0-0:1.0.0(221101214520W)
   uint32_t meter_Wh;           // 1-0:1.8.0(00006619795*kWh)
@@ -61,8 +69,26 @@ void han_setup() {
   han_write = 0;
   han_read = 0;
 
+  han_hist_write = 0;
+  han_hist_wrapped = false;
+
   // Start by dropping all bytes to first newline
   han_drop_junk = true;
+}
+
+void han_add_sample() {
+  uint32_t power = han_last.power_W;
+  if (power > 0xFFFF) {
+    // Make sure we do not overshoot the 16-bit history
+    power = 0xFFFF;
+  }
+
+  han_history[han_hist_write] = (uint16_t)power;
+  han_hist_write++;
+  if (han_hist_write > HAN_HISTORY_BUF_LEN) {
+    han_hist_write = 0;
+    han_hist_wrapped = true;
+  }
 }
 
 int han_available() {
@@ -167,6 +193,7 @@ void han_parse() {
   } else if (han_compare("!", true)) {
     // Checksum. Copy tmp struct to current.
     han_last = han_tmp;
+    han_add_sample();
   } else if (han_compare("0-0:1.0.0(", true)) {
     // time
     han_parse_time();
