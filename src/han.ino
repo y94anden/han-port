@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define BUF_SIZE 768
 
@@ -44,12 +45,15 @@ int han_read;
 bool han_drop_junk;
 
 // Circular buffer for power history
-#define HAN_HISTORY_BUF_LEN 11600
-uint16_t han_history[HAN_HISTORY_BUF_LEN];
+#define HAN_FULL_HISTORY_BUF_LEN 2970 // 2970 samples = 8.25 h
+#define HAN_AVG_HISTORY_BUF_LEN 5 * 24 * 60
+uint16_t han_history[HAN_FULL_HISTORY_BUF_LEN];
+uint16_t han_phase_history[3][HAN_FULL_HISTORY_BUF_LEN];
+uint16_t han_avg_history[HAN_AVG_HISTORY_BUF_LEN];
 int han_hist_write;
+int han_avg_hist_write;
 bool han_hist_wrapped;
-uint32_t han_hist_sum;
-int han_hist_sum_count;
+bool han_avg_hist_wrapped;
 
 typedef struct {
   char time[20];               // 0-0:1.0.0(221101214520W)
@@ -71,24 +75,53 @@ void han_setup() {
 
   han_hist_write = 0;
   han_hist_wrapped = false;
+  han_avg_hist_write = 0;
+  han_avg_hist_wrapped = false;
 
   // Start by dropping all bytes to first newline
   han_drop_junk = true;
 }
 
-void han_add_sample() {
-  uint32_t power = han_last.power_W;
-  if (power > 0xFFFF) {
+uint16_t han_16(uint32_t x) {
+  if (x > 0xFFFF) {
     // Make sure we do not overshoot the 16-bit history
-    power = 0xFFFF;
+    x = 0xFFFF;
+  }
+  return (uint16_t)x;
+}
+
+void han_add_avg_sample() {
+  uint32_t sum = 0;
+  if (han_last.time[17] == '0' && han_last.time[18] == '0' &&
+      (han_hist_wrapped || han_hist_write >= 6)) {
+    // Current second is zero. Average last 6 samples.
+    for (int i = -6; i < 0; i++) {
+      sum += han_history[(han_hist_write + i) % HAN_FULL_HISTORY_BUF_LEN];
+    }
+    sum /= 6;
+    han_avg_history[han_avg_hist_write] = sum;
+    han_avg_hist_write++;
+    if (han_avg_hist_write > HAN_AVG_HISTORY_BUF_LEN) {
+      han_avg_hist_write = 0;
+      han_avg_hist_wrapped = true;
+    }
+  }
+}
+
+void han_add_sample() {
+  han_history[han_hist_write] = han_16(han_last.power_W);
+  for (int i = 0; i < 3; i++) {
+    han_phase_history[i][han_hist_write] = han_16(han_last.phasePower_W[i]);
   }
 
-  han_history[han_hist_write] = (uint16_t)power;
   han_hist_write++;
-  if (han_hist_write > HAN_HISTORY_BUF_LEN) {
+  if (han_hist_write > HAN_FULL_HISTORY_BUF_LEN) {
     han_hist_write = 0;
     han_hist_wrapped = true;
   }
+
+  // Check if it is time to average
+  han_add_avg_sample();
 }
 
 int han_available() {
@@ -194,6 +227,7 @@ void han_parse() {
     // Checksum. Copy tmp struct to current.
     han_last = han_tmp;
     han_add_sample();
+    memset(&han_tmp, 0, sizeof(han_tmp));
   } else if (han_compare("0-0:1.0.0(", true)) {
     // time
     han_parse_time();

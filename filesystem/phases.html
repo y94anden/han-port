@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Elförbrukning - historik</title>
+    <script src="https://englund.mooo.com/static/stock/Chart.js"></script>
+</head>
+
+<body>
+    <h1>Elförbrukning</h1>
+    <div id="valuediv">
+        <canvas id="valuechart"></canvas>
+    </div>
+    <button onclick="fetchL1();">Reload</button>
+    <a href="https://englund.mooo.com/han/history.html">Total effekt</a>
+    <a href="https://englund.mooo.com/han/">Index</a>
+</body>
+
+
+<script>
+    var valueChart = null
+
+    var anders
+    function redraw(data) {
+
+        if (valueChart != null) {
+            valueChart.data = data
+            valueChart.update()
+        } else {
+            var ctx = document.getElementById("valuechart").getContext('2d');
+            var cfg = {
+                type: 'line',
+                data: data,
+                options: {
+                    responsive: true,
+                    legend: {
+                        display: false
+                    },
+                    animation: {
+                        duration: 0
+                    },
+                    scales: {
+                        xAxes: [],
+                        yAxes: [{
+                            position: 'left',
+                            id: 'y-axis-value',
+                            scaleLabel: {
+                                display: true,
+                                labelString: 'Power [kW]'
+                            }
+                        }]
+                    }
+                }
+            };
+            valueChart = new Chart(ctx, cfg);
+        }
+    }
+
+    function redrawBinary(response) {
+        const arrayBuffer = response;
+        if (arrayBuffer) {
+            const uintArray = new Uint16Array(arrayBuffer);
+            redraw(Array.from(uintArray).map(x => x / 1000))
+        };
+    }
+
+    var phases
+    function fetchL1() {
+        // Fetch the binary contents and draw the chart.
+        var url = "https://englund.mooo.com/han/history/1"
+
+        phases = {
+            L1: null,
+            L2: null,
+            L3: null,
+        }
+        fetch(url)
+            .then(resp => resp.blob())
+            .then(blob => blob.arrayBuffer())
+            .then(fetchL2);
+    }
+
+    function fetchL2(L1) {
+        // Fetch the binary contents and draw the chart.
+        var url = "https://englund.mooo.com/han/history/2"
+
+        const arrayBuffer = L1;
+        if (arrayBuffer) {
+            const uintArray = new Uint16Array(arrayBuffer);
+            phases["L1"] = Array.from(uintArray).map(x => x / 1000)
+        }
+
+        fetch(url)
+            .then(resp => resp.blob())
+            .then(blob => blob.arrayBuffer())
+            .then(fetchL3);
+    }
+
+
+    function fetchL3(L2) {
+        // Fetch the binary contents and draw the chart.
+        var url = "https://englund.mooo.com/han/history/3"
+
+        const arrayBuffer = L2;
+        if (arrayBuffer) {
+            const uintArray = new Uint16Array(arrayBuffer);
+            phases["L2"] = Array.from(uintArray).map(x => x / 1000)
+        }
+        fetch(url)
+            .then(resp => resp.blob())
+            .then(blob => blob.arrayBuffer())
+            .then(allFetched);
+    }
+
+    function allFetched(L3) {
+        const arrayBuffer = L3;
+        if (arrayBuffer) {
+            const uintArray = new Uint16Array(arrayBuffer);
+            phases["L3"] = Array.from(uintArray).map(x => x / 1000)
+        }
+
+        now = new Date()
+        msEpoch = now.getTime()
+
+        // Use L1 as array for calculating times
+        array = phases["L1"]
+
+        data = {
+            datasets: [
+                {
+                    data: phases["L1"],
+                    label: 'Power in kW (L1)',
+                    borderColor: 'rgb(0, 0, 255)',
+                },
+                {
+                    data: phases["L2"],
+                    label: 'Power in kW (L2)',
+                    borderColor: 'rgb(0, 255, 0)',
+                },
+                {
+                    data: phases["L3"],
+                    label: 'Power in kW (L3)',
+                    borderColor: 'rgb(255, 0, 0)',
+                }
+            ],
+            labels: array.map((x, i) => new Date(msEpoch - (array.length - i) * 10000).toISOString().substr(11, 8))
+        }
+        redraw(data)
+    }
+
+
+    fetchL1();
+
+
+</script>
+
+</html>

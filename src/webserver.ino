@@ -11,7 +11,11 @@ void webserver_setup() {
   server.on("/restart", ws_handle_restart);
   server.on("/raw", ws_handle_raw);
   server.on("/rest/current", ws_handle_rest_last);
-  server.on("/history", ws_handle_history);
+  server.on("/history/full", ws_handle_history_full);
+  server.on("/history/1", ws_handle_history_1);
+  server.on("/history/2", ws_handle_history_2);
+  server.on("/history/3", ws_handle_history_3);
+  server.on("/history/avg", ws_handle_history_avg);
 
   server.onNotFound(ws_handle_not_found);
 
@@ -92,21 +96,46 @@ void ws_handle_rest_last() {
   server.sendContent("}");
 }
 
-void ws_handle_history() {
-  int len = han_hist_wrapped ? HAN_HISTORY_BUF_LEN : han_hist_write;
+void ws_handle_history(bool wrapped, uint32_t write, uint32_t buflen,
+                       uint16_t *buf) {
+  int len = wrapped ? buflen : write;
   server.setContentLength(len * 2); // 16 bit data
 
   server.sendHeader("Cache-Control", String("no-cache"));
   server.sendHeader("Access-Control-Allow-Origin", String("*"));
 
   server.send(200, "application/octet-stream", "");
-  if (han_hist_wrapped) {
+  if (wrapped) {
     // Send the oldest data (that is soon to be overwritten)
-    server.sendContent((const char *)&han_history[han_hist_write],
-                       (HAN_HISTORY_BUF_LEN - han_hist_write) * 2);
+    server.sendContent((const char *)&buf[write], (buflen - write) * 2);
   }
   // Send the data from 0 and up until latest.
-  server.sendContent((const char *)han_history, han_hist_write * 2);
+  server.sendContent((const char *)buf, write * 2);
+}
+
+void ws_handle_history_full() {
+  ws_handle_history(han_hist_wrapped, han_hist_write, HAN_FULL_HISTORY_BUF_LEN,
+                    han_history);
+}
+
+void ws_handle_history_1() {
+  ws_handle_history(han_hist_wrapped, han_hist_write, HAN_FULL_HISTORY_BUF_LEN,
+                    han_phase_history[0]);
+}
+
+void ws_handle_history_2() {
+  ws_handle_history(han_hist_wrapped, han_hist_write, HAN_FULL_HISTORY_BUF_LEN,
+                    han_phase_history[1]);
+}
+
+void ws_handle_history_3() {
+  ws_handle_history(han_hist_wrapped, han_hist_write, HAN_FULL_HISTORY_BUF_LEN,
+                    han_phase_history[2]);
+}
+
+void ws_handle_history_avg() {
+  ws_handle_history(han_avg_hist_wrapped, han_avg_hist_write,
+                    HAN_AVG_HISTORY_BUF_LEN, han_avg_history);
 }
 
 String get_content_type(String uri) {
