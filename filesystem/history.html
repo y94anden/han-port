@@ -13,6 +13,7 @@
         <canvas id="valuechart"></canvas>
     </div>
     <button onclick="fetchData();">Reload</button>
+    <a href="https://englund.mooo.com/han/">Index</a>
 </body>
 
 
@@ -67,9 +68,7 @@
         }
     }
 
-    var anders
     function redrawBinary(response) {
-        anders = response
         const arrayBuffer = response;
         if (arrayBuffer) {
             const uintArray = new Uint16Array(arrayBuffer);
@@ -79,7 +78,7 @@
 
     function fetchData(params) {
         // Fetch the binary contents and draw the chart.
-        var url = "/history"
+        var url = "https://englund.mooo.com/han/history/full"
 
         fetch(url)
             .then(resp => resp.blob())
