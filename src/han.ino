@@ -45,7 +45,7 @@ int han_read;
 bool han_drop_junk;
 
 // Circular buffer for power history
-#define HAN_FULL_HISTORY_BUF_LEN 2970 // 2970 samples = 8.25 h
+#define HAN_FULL_HISTORY_BUF_LEN 1530 // 1530 samples = 4.25 h
 #define HAN_AVG_HISTORY_BUF_LEN 5 * 24 * 60
 uint16_t han_history[HAN_FULL_HISTORY_BUF_LEN];
 uint16_t han_phase_history[3][HAN_FULL_HISTORY_BUF_LEN];
@@ -222,12 +222,14 @@ uint32_t han_parse_milli_int() {
 
 void han_parse() {
   if (han_compare("/", true)) {
-    // Meter ID. Skip.
+    // Meter ID. Light led.
+    led_on();
   } else if (han_compare("!", true)) {
     // Checksum. Copy tmp struct to current.
     han_last = han_tmp;
     han_add_sample();
     memset(&han_tmp, 0, sizeof(han_tmp));
+    led_off();
   } else if (han_compare("0-0:1.0.0(", true)) {
     // time
     han_parse_time();
