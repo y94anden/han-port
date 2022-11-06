@@ -12,27 +12,66 @@
 	<div id="valuediv">
 		<canvas id="valuechart"></canvas>
 	</div>
+	<input id="combined" type="checkbox" onclick="checkbox()" checked="true">Combined</button>
+	<input id="L1" type="checkbox" onclick="checkbox()">L1</button>
+	<input id="L2" type="checkbox" onclick="checkbox()">L2</button>
+	<input id="L3" type="checkbox" onclick="checkbox()">L3</button>
 	<button onclick="fetchData();">Reload</button>
-	<a href="https://englund.mooo.com/han/phases.html">Effekt per fas</a>
 	<a href="https://englund.mooo.com/han/">Index</a>
 </body>
 
-
 <script>
 	var valueChart = null
+	var allData = {}
 
-	var anders
-	function redraw(array) {
+	function $(id) {
+		return document.getElementById(id)
+	}
+
+	function ischecked(id) {
+		return $(id).checked
+	}
+
+	function redraw() {
+		datasets = []
+
+		if (ischecked("combined")) {
+			array = allData["combined"]
+			datasets.push({
+				data: array,
+				label: 'Combined power in kw',
+				borderColor: 'rgb(0, 0, 0)'
+			})
+		}
+		if (ischecked("L1")) {
+			array = allData["L1"]
+			datasets.push({
+				data: array,
+				label: 'Power in kW (L1)',
+				borderColor: 'rgb(0, 0, 255)',
+			})
+		}
+		if (ischecked("L2")) {
+			array = allData["L2"]
+			datasets.push({
+				data: array,
+				label: 'Power in kW (L2)',
+				borderColor: 'rgb(0, 255, 0)',
+			})
+		}
+		if (ischecked("L3")) {
+			array = allData["L3"]
+			datasets.push({
+				data: array,
+				label: 'Power in kW (L3)',
+				borderColor: 'rgb(255, 0, 0)',
+			})
+		}
 
 		now = new Date()
-		msEpoch = now.getTime()
-
+		msEpoch = Math.floor(now.getTime() / 10000) * 10000
 		data = {
-			datasets: [{
-				data: array,
-				label: 'Power in kW',
-				borderColor: 'rgb(255, 192, 192)',
-			}],
+			datasets: datasets,
 			labels: array.map((x, i) => new Date(msEpoch - (array.length - i) * 10000).toISOString().substr(11, 8))
 		}
 
@@ -40,7 +79,7 @@
 			valueChart.data = data
 			valueChart.update()
 		} else {
-			var ctx = document.getElementById("valuechart").getContext('2d');
+			var ctx = $("valuechart").getContext('2d');
 			var cfg = {
 				type: 'line',
 				data: data,
@@ -69,27 +108,84 @@
 		}
 	}
 
-	function redrawBinary(response) {
-		const arrayBuffer = response;
-		if (arrayBuffer) {
-			const uintArray = new Uint16Array(arrayBuffer);
-			redraw(Array.from(uintArray).map(x => x / 1000))
-		};
+	function received(arrayBuffer, name) {
+		const uintArray = new Uint16Array(arrayBuffer);
+		allData[name] = Array.from(uintArray).map(x => x / 1000)
+		process();
 	}
 
-	function fetchData(params) {
-		// Fetch the binary contents and draw the chart.
-		var url = "https://englund.mooo.com/han/history/full"
+	function combinedReceived(arrayBuffer) {
+		received(arrayBuffer, "combined")
+	}
 
-		fetch(url)
-			.then(resp => resp.blob())
-			.then(blob => blob.arrayBuffer())
-			.then(redrawBinary);
+	function L1Received(arrayBuffer) {
+		received(arrayBuffer, "L1")
+	}
+
+	function L2Received(arrayBuffer) {
+		received(arrayBuffer, "L2")
+	}
+
+	function L3Received(arrayBuffer) {
+		received(arrayBuffer, "L3")
+	}
+
+	function wantsData(name) {
+		return ischecked(name) && !allData[name]
+	}
+
+	function process() {
+		var url = null
+		var fn = null
+		if (wantsData("combined")) {
+			url = "https://englund.mooo.com/han/history/full"
+			fn = combinedReceived
+		}
+		else if (wantsData("L1")) {
+			url = "https://englund.mooo.com/han/history/1"
+			fn = L1Received
+		}
+		else if (wantsData("L2")) {
+			url = "https://englund.mooo.com/han/history/2"
+			fn = L2Received
+		}
+		else if (wantsData("L3")) {
+			url = "https://englund.mooo.com/han/history/3"
+			fn = L3Received
+		} else {
+			redraw()
+		}
+
+		if (url) {
+			fetch(url)
+				.then(resp => resp.blob())
+				.then(blob => blob.arrayBuffer())
+				.then(fn)
+		}
+	}
+
+	var combinedPreviouslyUnchecked = false
+	function checkbox() {
+		// If no checkboxes are checked, either check "combined" or the three phases
+		if (!ischecked("combined") && !ischecked("L1") && !ischecked("L2") && !ischecked("L3")) {
+			if (combinedPreviouslyUnchecked) {
+				$("combined").checked = true
+			} else {
+				$("L1").checked = true
+				$("L2").checked = true
+				$("L3").checked = true
+			}
+		}
+		combinedPreviouslyUnchecked = !ischecked("combined")
+		fetchData()
+	}
+
+	function fetchData() {
+		allData = {}
+		process()
 	}
 
 	fetchData();
-
-
 </script>
 
 </html>
