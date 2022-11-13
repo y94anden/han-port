@@ -1,7 +1,7 @@
+#include "template-render.h"
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-
 #define BUF_SIZE 768
 
 /* Format of one frame
@@ -80,6 +80,20 @@ void han_setup() {
 
   // Start by dropping all bytes to first newline
   han_drop_junk = true;
+
+  // Update template field pointers
+  tpl_set("time", STRING, &han_last.time);
+  tpl_set("meter_Wh", UINT32, &han_last.meter_Wh);
+  tpl_set("power_W", UINT32, &han_last.power_W);
+  tpl_set("power_L1", UINT32, &han_last.phasePower_W[0]);
+  tpl_set("power_L2", UINT32, &han_last.phasePower_W[1]);
+  tpl_set("power_L3", UINT32, &han_last.phasePower_W[2]);
+  tpl_set("volt_L1", UINT32, &han_last.phaseVoltage_mV[0]);
+  tpl_set("volt_L2", UINT32, &han_last.phaseVoltage_mV[1]);
+  tpl_set("volt_L3", UINT32, &han_last.phaseVoltage_mV[2]);
+  tpl_set("curr_L1", UINT32, &han_last.phaseCurrent_mA[0]);
+  tpl_set("curr_L2", UINT32, &han_last.phaseCurrent_mA[1]);
+  tpl_set("curr_L3", UINT32, &han_last.phaseCurrent_mA[2]);
 }
 
 uint16_t han_16(uint32_t x) {

@@ -1,3 +1,4 @@
+#include "template-render.h"
 
 void setup() {
   led_setup();

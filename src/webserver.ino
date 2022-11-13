@@ -1,3 +1,4 @@
+#include "template-render.h"
 #include <ESP8266WebServer.h>
 
 extern "C" {
@@ -24,8 +25,21 @@ void webserver_setup() {
 
 void webserver_loop() { server.handleClient(); }
 
+void ws_send(PGM_P p, unsigned int length) {
+  if (length == 0) {
+    length = strlen_P(p);
+  }
+  if (length == 0) {
+    // No need to send a zero length string
+    return;
+  }
+  server.sendContent(p, length);
+}
+
 void ws_handle_root() {
-  server.send(200, "text/html", (char *)read_file("index.html", 0));
+  server.setContentLength(CONTENT_LENGTH_UNKNOWN);
+  server.send(200, "text/html", "");
+  tpl_send("index.html", ws_send);
 }
 
 void ws_handle_restart() {
