@@ -16,7 +16,8 @@ void webserver_setup() {
   server.on("/history/1", ws_handle_history_1);
   server.on("/history/2", ws_handle_history_2);
   server.on("/history/3", ws_handle_history_3);
-  server.on("/history/avg", ws_handle_history_avg);
+  server.on("/history/meter", ws_handle_history_meter);
+  server.on("/simulate/meter", ws_handle_simulate_meter_history);
 
   server.onNotFound(ws_handle_not_found);
 
@@ -111,9 +112,9 @@ void ws_handle_rest_last() {
 }
 
 void ws_handle_history(bool wrapped, uint32_t write, uint32_t buflen,
-                       uint16_t *buf) {
+                       uint8_t *buf, uint8_t datasize) {
   int len = wrapped ? buflen : write;
-  server.setContentLength(len * 2); // 16 bit data
+  server.setContentLength(len * datasize); // 8, 16 or 32 bit data
 
   server.sendHeader("Cache-Control", String("no-cache"));
   server.sendHeader("Access-Control-Allow-Origin", String("*"));
@@ -121,35 +122,52 @@ void ws_handle_history(bool wrapped, uint32_t write, uint32_t buflen,
   server.send(200, "application/octet-stream", "");
   if (wrapped) {
     // Send the oldest data (that is soon to be overwritten)
-    server.sendContent((const char *)&buf[write], (buflen - write) * 2);
+    server.sendContent((const char *)&buf[write * datasize],
+                       (buflen - write) * datasize);
   }
   // Send the data from 0 and up until latest.
-  server.sendContent((const char *)buf, write * 2);
+  server.sendContent((const char *)buf, write * datasize);
 }
 
 void ws_handle_history_full() {
   ws_handle_history(han_hist_wrapped, han_hist_write, HAN_FULL_HISTORY_BUF_LEN,
-                    han_history);
+                    (uint8_t *)han_history, 2);
 }
 
 void ws_handle_history_1() {
   ws_handle_history(han_hist_wrapped, han_hist_write, HAN_FULL_HISTORY_BUF_LEN,
-                    han_phase_history[0]);
+                    (uint8_t *)han_phase_history[0], 2);
 }
 
 void ws_handle_history_2() {
   ws_handle_history(han_hist_wrapped, han_hist_write, HAN_FULL_HISTORY_BUF_LEN,
-                    han_phase_history[1]);
+                    (uint8_t *)han_phase_history[1], 2);
 }
 
 void ws_handle_history_3() {
   ws_handle_history(han_hist_wrapped, han_hist_write, HAN_FULL_HISTORY_BUF_LEN,
-                    han_phase_history[2]);
+                    (uint8_t *)han_phase_history[2], 2);
 }
 
-void ws_handle_history_avg() {
-  ws_handle_history(han_avg_hist_wrapped, han_avg_hist_write,
-                    HAN_AVG_HISTORY_BUF_LEN, han_avg_history);
+void ws_handle_history_meter() {
+  ws_handle_history(han_meter_hist_wrapped, han_meter_hist_write,
+                    HAN_METER_HISTORY_BUF_LEN, (uint8_t *)han_meter_history, 4);
+}
+
+void ws_handle_simulate_meter_history() {
+  han_meter_history[0] = 6830555;
+  han_meter_history[1] = 6831555;
+  han_meter_history[2] = 6832555;
+  han_meter_history[3] = 6833555;
+  han_meter_history[4] = 6834555;
+  han_meter_history[5] = 6835555;
+  han_meter_history[6] = 6836555;
+  han_meter_history[7] = 6837555;
+  han_meter_history[8] = 6838555;
+  han_meter_history[9] = 6839555;
+  han_meter_history[10] = 6840555;
+  han_meter_hist_write = 11;
+  server.send(200, "text/plain", "meter history added");
 }
 
 String get_content_type(String uri) {

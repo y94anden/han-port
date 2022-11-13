@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<title>Elförbrukning - historik</title>
+	<script src="https://englund.mooo.com/static/stock/Chart.js"></script>
+</head>
+
+<body>
+	<h1>Elförbrukning</h1>
+	<div id="valuediv">
+		<canvas id="valuechart"></canvas>
+	</div>
+	<button onclick="fetchData();">Reload</button>
+	<a href="https://englund.mooo.com/han/">Index</a>
+</body>
+
+<script>
+	var valueChart = null
+	var allData = {}
+
+	function $(id) {
+		return document.getElementById(id)
+	}
+
+	function redraw(array) {
+		datasets = []
+
+		diff = array.map((val, index) => val - array[index - 1])
+		diff.shift() // Drop first NaN
+
+		array = diff
+		datasets.push({
+			data: diff,
+			label: 'Meter',
+			borderColor: 'rgb(0, 0, 178)',
+			backgroundColor: 'rgb(150,200,150)'
+		})
+
+		now = new Date()
+		msPerDay = 24 * 3600 * 1000
+		msEpoch = Math.floor(now.getTime() / 10000) * 10000
+		data = {
+			datasets: datasets,
+			labels: array.map((x, i) => new Date(msEpoch - (array.length - i) * msPerDay).toISOString().substr(0, 10))
+		}
+
+		if (valueChart != null) {
+			valueChart.data = data
+			valueChart.update()
+		} else {
+			var ctx = $("valuechart").getContext('2d');
+			var cfg = {
+				type: 'bar',
+				data: data,
+				options: {
+					responsive: true,
+					legend: {
+						display: false
+					},
+					animation: {
+						duration: 0
+					},
+					scales: {
+						xAxes: [],
+						yAxes: [{
+							position: 'left',
+							id: 'y-axis-value',
+							scaleLabel: {
+								display: true,
+								labelString: 'Meter [kWh]'
+							}
+						}]
+					}
+				}
+			};
+			valueChart = new Chart(ctx, cfg);
+		}
+	}
+
+	function received(arrayBuffer, name) {
+		console.log("Received")
+		const uintArray = new Uint32Array(arrayBuffer);
+		redraw(Array.from(uintArray).map(x => x / 1000));
+	}
+
+	function fetchData() {
+		var url = "https://englund.mooo.com/han/history/meter"
+		url = "http://192.168.1.105/history/meter"
+		fetch(url)
+			.then(resp => resp.blob())
+			.then(blob => blob.arrayBuffer())
+			.then(received)
+	}
+
+	fetchData();
+</script>
+
+</html>

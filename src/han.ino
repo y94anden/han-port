@@ -46,14 +46,15 @@ bool han_drop_junk;
 
 // Circular buffer for power history
 #define HAN_FULL_HISTORY_BUF_LEN 1530 // 1530 samples = 4.25 h
-#define HAN_AVG_HISTORY_BUF_LEN 5 * 24 * 60
+#define HAN_METER_HISTORY_BUF_LEN (365 * 4 + 1)
 uint16_t han_history[HAN_FULL_HISTORY_BUF_LEN];
 uint16_t han_phase_history[3][HAN_FULL_HISTORY_BUF_LEN];
-uint16_t han_avg_history[HAN_AVG_HISTORY_BUF_LEN];
+uint32_t han_meter_history[HAN_METER_HISTORY_BUF_LEN];
+char han_last_meter_date[11];
 int han_hist_write;
-int han_avg_hist_write;
+int han_meter_hist_write;
 bool han_hist_wrapped;
-bool han_avg_hist_wrapped;
+bool han_meter_hist_wrapped;
 
 typedef struct {
   char time[20];               // 0-0:1.0.0(221101214520W)
@@ -75,8 +76,9 @@ void han_setup() {
 
   han_hist_write = 0;
   han_hist_wrapped = false;
-  han_avg_hist_write = 0;
-  han_avg_hist_wrapped = false;
+  han_meter_hist_write = 0;
+  han_meter_hist_wrapped = false;
+  han_last_meter_date[0] = '\0';
 
   // Start by dropping all bytes to first newline
   han_drop_junk = true;
@@ -104,20 +106,20 @@ uint16_t han_16(uint32_t x) {
   return (uint16_t)x;
 }
 
-void han_add_avg_sample() {
-  uint32_t sum = 0;
-  if (han_last.time[17] == '0' && han_last.time[18] == '0' &&
-      (han_hist_wrapped || han_hist_write >= 6)) {
-    // Current second is zero. Average last 6 samples.
-    for (int i = -6; i < 0; i++) {
-      sum += han_history[(han_hist_write + i) % HAN_FULL_HISTORY_BUF_LEN];
-    }
-    sum /= 6;
-    han_avg_history[han_avg_hist_write] = sum;
-    han_avg_hist_write++;
-    if (han_avg_hist_write > HAN_AVG_HISTORY_BUF_LEN) {
-      han_avg_hist_write = 0;
-      han_avg_hist_wrapped = true;
+void han_add_meter_sample() {
+  char date[11];
+  memcpy(date, han_last.time, 10);
+  date[10] = '\0';
+  if (strcmp(date, han_last_meter_date) == 0 && han_last.time[11] == '0' &&
+      han_last.time[12] == '0' && han_last.meter_Wh > 0) {
+    // We have a new date, and the hour is 00. Add current sample to meter
+    // history
+    han_meter_history[han_meter_hist_write] = han_last.meter_Wh;
+    han_meter_hist_write++;
+    strcpy(han_last_meter_date, date);
+    if (han_meter_hist_write > HAN_METER_HISTORY_BUF_LEN) {
+      han_meter_hist_write = 0;
+      han_meter_hist_wrapped = true;
     }
   }
 }
@@ -134,8 +136,8 @@ void han_add_sample() {
     han_hist_wrapped = true;
   }
 
-  // Check if it is time to average
-  han_add_avg_sample();
+  // Check if it is time to add new meter sample
+  han_add_meter_sample();
 }
 
 int han_available() {
