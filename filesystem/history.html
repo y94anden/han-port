@@ -17,7 +17,7 @@
 	<input id="L2" type="checkbox" onclick="checkbox()">L2</button>
 	<input id="L3" type="checkbox" onclick="checkbox()">L3</button>
 	<button onclick="fetchData();">Reload</button>
-	<a href="https://englund.mooo.com/han/">Index</a>
+	<a href="{X-Sub-Path}/">Index</a>
 </body>
 
 <script>
@@ -138,19 +138,19 @@
 		var url = null
 		var fn = null
 		if (wantsData("combined")) {
-			url = "https://englund.mooo.com/han/history/full"
+			url = "{X-Sub-Path}/history/full"
 			fn = combinedReceived
 		}
 		else if (wantsData("L1")) {
-			url = "https://englund.mooo.com/han/history/1"
+			url = "{X-Sub-Path}/history/1"
 			fn = L1Received
 		}
 		else if (wantsData("L2")) {
-			url = "https://englund.mooo.com/han/history/2"
+			url = "{X-Sub-Path}/history/2"
 			fn = L2Received
 		}
 		else if (wantsData("L3")) {
-			url = "https://englund.mooo.com/han/history/3"
+			url = "{X-Sub-Path}/history/3"
 			fn = L3Received
 		} else {
 			redraw()

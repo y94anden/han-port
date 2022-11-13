@@ -6,9 +6,12 @@ extern "C" {
 }
 
 ESP8266WebServer server(80);
+char ws_sub_path[256];
 
 void webserver_setup() {
   server.on("/", ws_handle_root);
+  server.on("/history", ws_handle_hist);
+  server.on("/meter", ws_handle_meter);
   server.on("/restart", ws_handle_restart);
   server.on("/raw", ws_handle_raw);
   server.on("/rest/current", ws_handle_rest_last);
@@ -20,6 +23,16 @@ void webserver_setup() {
   server.on("/simulate/meter", ws_handle_simulate_meter_history);
 
   server.onNotFound(ws_handle_not_found);
+
+  // To get more headers than the two standard ("Authorization" and
+  // "If-None-Match"), the desired headers must be supplied
+  const char *headers[] = {"X-Sub-Path"};
+  server.collectHeaders(headers, sizeof(headers) / sizeof(char *));
+
+  // Default subpath is empty until we find a header "X-Sub-Path", in
+  // which case we replace it
+  ws_sub_path[0] = '\0';
+  tpl_set("X-Sub-Path", STRING, ws_sub_path);
 
   server.begin(); // Actually start the server
 }
@@ -37,11 +50,18 @@ void ws_send(PGM_P p, unsigned int length) {
   server.sendContent(p, length);
 }
 
-void ws_handle_root() {
+void ws_render_html(const char *filename) {
   server.setContentLength(CONTENT_LENGTH_UNKNOWN);
   server.send(200, "text/html", "");
-  tpl_send("index.html", ws_send);
+  if (server.hasHeader("X-Sub-Path")) {
+    strcpy(ws_sub_path, server.header("X-Sub-Path").c_str());
+  }
+  tpl_send(filename, ws_send);
 }
+
+void ws_handle_root() { ws_render_html("index.html"); }
+void ws_handle_hist() { ws_render_html("history.html"); }
+void ws_handle_meter() { ws_render_html("meter.html"); }
 
 void ws_handle_restart() {
   server.send(200, "text/plain", "restarting...");
