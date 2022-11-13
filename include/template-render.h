@@ -17,7 +17,7 @@ typedef void (*Sendfunction_t)(PGM_P p, unsigned int length);
 
 void tpl_setup();
 void tpl_clear();
-void tpl_send(const char *filename, Sendfunction_t send);
-void tpl_set(const char *field, Datatype_t format, void *pointer);
+void tpl_send(PGM_P filename, Sendfunction_t send);
+void tpl_set(PGM_P field, Datatype_t format, void *pointer);
 
 #endif // TEMPLATE_RENDER_H

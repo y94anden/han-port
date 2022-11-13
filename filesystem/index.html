@@ -11,35 +11,35 @@
 	<table>
 		<tr>
 			<th>Tid</th>
-			<td>{time}</td>
+			<td>{{time}}</td>
 		</tr>
 		<tr>
 			<th>Mätarställning</th>
-			<td>{meter_Wh}</td>
+			<td>{{meter_Wh}}</td>
 		</tr>
 		<tr>
 			<th>Nuvarande effekt</th>
-			<td>{power_W}</td>
+			<td>{{power_W}}</td>
 		</tr>
 		<tr>
 			<th>Aktuell spänning</th>
-			<td>{volt_L1}</td>
+			<td>{{volt_L1}}</td>
 		</tr>
 		<tr>
 			<th>&nbsp;</th>
-			<td>{volt_L2}</td>
+			<td>{{volt_L2}}</td>
 		</tr>
 		<tr>
 			<th>&nbsp;</th>
-			<td>{volt_L3}</td>
+			<td>{{volt_L3}}</td>
 		</tr>
 	</table>
 
 	<ul>
-		<li>Visa <a href="{X-Sub-Path}/history">effektgraf</a> för senaste 4 timmarna.</li>
-		<li> Visa <a href="{X-Sub-Path}/meter">dagsförbrukning</a></li>
-		<li>Visa <a href="{X-Sub-Path}/raw">rå receive buffer</a>.</li>
-		<li>Visa senaste data som <a href="{X-Sub-Path}/rest/current">json</a>.</li>
+		<li>Visa <a href="{{X-Sub-Path}}/history">effektgraf</a> för senaste 4 timmarna.</li>
+		<li> Visa <a href="{{X-Sub-Path}}/meter">dagsförbrukning</a></li>
+		<li>Visa <a href="{{X-Sub-Path}}/raw">rå receive buffer</a>.</li>
+		<li>Visa senaste data som <a href="{{X-Sub-Path}}/rest/current">json</a>.</li>
 	</ul>
 </body>
 

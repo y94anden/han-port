@@ -13,7 +13,7 @@
 		<canvas id="valuechart"></canvas>
 	</div>
 	<button onclick="fetchData();">Reload</button>
-	<a href="{X-Sub-Path}/">Index</a>
+	<a href="{{X-Sub-Path}}/">Index</a>
 </body>
 
 <script>
@@ -86,7 +86,7 @@
 	}
 
 	function fetchData() {
-		var url = "{X-Sub-Path}/history/meter"
+		var url = "{{X-Sub-Path}}/history/meter"
 		fetch(url)
 			.then(resp => resp.blob())
 			.then(blob => blob.arrayBuffer())

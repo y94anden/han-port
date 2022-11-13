@@ -24,7 +24,7 @@ void tpl_clear() {
   }
 }
 
-int tpl_field_index(const char *field) {
+int tpl_field_index(PGM_P field) {
   for (int i = 0; i < MAX_TEMPLATE_FIELDS; i++) {
     if (strcmp(field, tpl_storage[i].field) == 0) {
       return i;
@@ -33,7 +33,7 @@ int tpl_field_index(const char *field) {
   return -1;
 }
 
-void tpl_set(const char *field, Datatype_t format, void *pointer) {
+void tpl_set(PGM_P field, Datatype_t format, void *pointer) {
   int index = tpl_field_index(field);
   if (index == -1) {
     // Field not in storage. Find an empty instead.
@@ -50,7 +50,7 @@ void tpl_set(const char *field, Datatype_t format, void *pointer) {
   tpl_storage[index].pointer = pointer;
 }
 
-const char *fmt_select(const char *s1, const char *s2) {
+PGM_P fmt_select(PGM_P s1, PGM_P s2) {
   if (s1[0] != '\0') {
     return s1;
   }
@@ -66,10 +66,12 @@ char to_byte(PGM_P p) {
 PGM_P tpl_render(PGM_P p, Sendfunction_t send) {
   char tmp[64];
   char byte = to_byte(p);
-  if (byte != '{') {
+  if (byte != '{' || to_byte(p + 1) != '{') {
     send(("&lt;internal rendering error&gt;"), 0);
     return p;
   }
+  // Skip the two "{{"
+  p++;
   p++;
 
   char fieldname[MAX_FIELD_NAME_LEN + 1];
@@ -120,6 +122,15 @@ PGM_P tpl_render(PGM_P p, Sendfunction_t send) {
   }
   fmtstring[i] = '\0';
 
+  // Now p should point to two "}}". Skip past them.
+  if (to_byte(p) != '}' || to_byte(p + 1) != '}') {
+    sprintf(tmp, ("&lt;Field %s not closed with double }}&gt;"), fieldname);
+    send(tmp, 0);
+    return p;
+  }
+  p++;
+  p++;
+
   const char *ptr = tmp;
   switch (tpl_storage[index].format) {
   case STRING:
@@ -159,7 +170,7 @@ PGM_P tpl_render(PGM_P p, Sendfunction_t send) {
   return p;
 }
 
-void tpl_send(const char *filename, Sendfunction_t send) {
+void tpl_send(PGM_P filename, Sendfunction_t send) {
   PGM_P p = read_file(filename, NULL);
   if (!p) {
     send(("Internal error: Could not read file "), 0);
@@ -167,12 +178,12 @@ void tpl_send(const char *filename, Sendfunction_t send) {
   }
   unsigned char byte = to_byte(p);
   while (byte != '\0') {
-    if (byte == '{') {
+    if (byte == '{' && to_byte(p + 1) == '{') {
       p = tpl_render(p, send);
     } else {
       send(p, 1);
+      p++;
     }
-    p++;
     byte = to_byte(p);
   }
 }
