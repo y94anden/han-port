@@ -106,7 +106,16 @@ uint16_t han_16(uint32_t x) {
   return (uint16_t)x;
 }
 
-void han_add_meter_sample() {
+void han_add_meter_sample(uint32_t meter) {
+  han_meter_history[han_meter_hist_write] = meter;
+  han_meter_hist_write++;
+  if (han_meter_hist_write > HAN_METER_HISTORY_BUF_LEN) {
+    han_meter_hist_write = 0;
+    han_meter_hist_wrapped = true;
+  }
+}
+
+void han_check_if_time_to_add_meter_sample() {
   char date[11];
   memcpy(date, han_last.time, 10);
   date[10] = '\0';
@@ -114,13 +123,8 @@ void han_add_meter_sample() {
       han_last.time[12] == '0' && han_last.meter_Wh > 0) {
     // We have a new date, and the hour is 00. Add current sample to meter
     // history
-    han_meter_history[han_meter_hist_write] = han_last.meter_Wh;
-    han_meter_hist_write++;
+    han_add_meter_sample(han_last.meter_Wh);
     strcpy(han_last_meter_date, date);
-    if (han_meter_hist_write > HAN_METER_HISTORY_BUF_LEN) {
-      han_meter_hist_write = 0;
-      han_meter_hist_wrapped = true;
-    }
   }
 }
 
@@ -137,7 +141,7 @@ void han_add_sample() {
   }
 
   // Check if it is time to add new meter sample
-  han_add_meter_sample();
+  han_check_if_time_to_add_meter_sample();
 }
 
 int han_available() {

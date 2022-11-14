@@ -23,6 +23,7 @@ void webserver_setup() {
   server.on(F("/history/2"), ws_handle_history_2);
   server.on(F("/history/3"), ws_handle_history_3);
   server.on(F("/history/meter"), ws_handle_history_meter);
+  server.on(F("/history/meter/add"), ws_handle_add_meter);
   server.on(F("/simulate/meter"), ws_handle_simulate_meter_history);
 
   server.onNotFound(ws_handle_not_found);
@@ -230,6 +231,31 @@ void ws_handle_history_3() {
 void ws_handle_history_meter() {
   ws_handle_history(han_meter_hist_wrapped, han_meter_hist_write,
                     HAN_METER_HISTORY_BUF_LEN, (uint8_t *)han_meter_history, 4);
+}
+
+void ws_handle_add_meter() {
+  if (han_last_meter_date[0] != '\0') {
+    // The server has added meter settings already. Refuse any more.
+    server.send(418, "text/plain", "I'm a teapot");
+    return;
+  }
+
+  if (!server.hasArg("plain")) {
+    server.send(400, "text/plain", "No payload");
+    return;
+  }
+
+  String payload = "";
+  payload += server.arg("plain");
+  uint32_t meterValue = payload.toInt();
+
+  if (meterValue == 0) {
+    server.send(400, "text/plain", "Payload not an integer");
+    return;
+  }
+  han_add_meter_sample(meterValue);
+  sprintf(tmp_buf, "thanx, we now have %d entries", han_meter_hist_write);
+  server.send(200, "text/plain", tmp_buf);
 }
 
 void ws_handle_simulate_meter_history() {
