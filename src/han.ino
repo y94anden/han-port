@@ -119,7 +119,7 @@ void han_check_if_time_to_add_meter_sample() {
   char date[11];
   memcpy(date, han_last.time, 10);
   date[10] = '\0';
-  if (strcmp(date, han_last_meter_date) == 0 && han_last.time[11] == '0' &&
+  if (strcmp(date, han_last_meter_date) != 0 && han_last.time[11] == '0' &&
       han_last.time[12] == '0' && han_last.meter_Wh > 0) {
     // We have a new date, and the hour is 00. Add current sample to meter
     // history
