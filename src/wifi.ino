@@ -3,12 +3,12 @@
 
 ESP8266WiFiMulti wifiMulti;
 
-#define MY_SSID "network"
-#define MY_PASS "password"
-
 void wifi_setup() {
   // add Wi-Fi networks you want to connect to
-  wifiMulti.addAP(MY_SSID, MY_PASS);
+  wifiMulti.addAP("network1", "password1");
+  wifiMulti.addAP("network2", "password2");
+  wifiMulti.addAP("network3", "password3");
+  wifiMulti.addAP("network4", "password4");
 
   while (wifiMulti.run() != WL_CONNECTED) { // Wait for the Wi-Fi to connect
     delay(250);
