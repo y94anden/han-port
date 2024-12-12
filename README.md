@@ -48,3 +48,4 @@ Connected pins:
 * 1 - GND
 * 8 - Vcc
 * 7 - UART Rx for data, with pullup to 3.3V
+* 5 - GPIO output

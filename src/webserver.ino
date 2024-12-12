@@ -19,6 +19,7 @@ void webserver_setup() {
   server.on(F("/restart"), ws_handle_restart);
   server.on(F("/raw"), ws_handle_raw);
   server.on(F("/rest/current"), ws_handle_rest_last);
+  server.on(F("/rest/gpio"), ws_handle_rest_gpio);
   server.on(F("/history/full"), ws_handle_history_full);
   server.on(F("/history/1"), ws_handle_history_1);
   server.on(F("/history/2"), ws_handle_history_2);
@@ -186,6 +187,21 @@ void ws_handle_rest_last() {
 
   server.sendContent(F("}"));
 
+  server.sendContent(F(""));
+  server.client().stop();
+}
+
+void ws_handle_rest_gpio() {
+  if (server.hasArg("on")) {
+    gpio_on();
+  } else if (server.hasArg("off")) {
+    gpio_off();
+  }
+
+  sprintf(tmp_buf, "{\"gpio\":%s}", gpio_state() ? "true" : "false");
+  server.setContentLength(strlen(tmp_buf));
+  server.sendHeader("Cache-Control", String("no-cache"));
+  server.send(200, "text/json", tmp_buf);
   server.sendContent(F(""));
   server.client().stop();
 }

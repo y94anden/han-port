@@ -14,8 +14,6 @@ void wifi_setup() {
     delay(250);
     led_toggle();
   }
-
-  led_on();
 }
 
 void wifi_loop() {
