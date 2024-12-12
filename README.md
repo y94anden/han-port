@@ -22,3 +22,9 @@ arduino over-the-air code: `pio run -t upload`.
 
 * In code: Ctrl-Alt-b
 * Command line: `pio run`
+
+# Hardware
+
+The ESP01s is put on a small board that gets its power from the HAN port. Since it is 5V, a 3.3V regulator is added on the board.
+
+The serial line of the HAN port is inverted, so the code inverts the UART in `han_setup()`.
