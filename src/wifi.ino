@@ -17,3 +17,8 @@ void wifi_setup() {
 
   led_on();
 }
+
+void wifi_loop() {
+  // Maintain WiFi connection
+  wifiMulti.run(100);
+}
