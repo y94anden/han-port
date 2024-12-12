@@ -28,3 +28,23 @@ arduino over-the-air code: `pio run -t upload`.
 The ESP01s is put on a small board that gets its power from the HAN port. Since it is 5V, a 3.3V regulator is added on the board.
 
 The serial line of the HAN port is inverted, so the code inverts the UART in `han_setup()`.
+
+```
+
++---------------------------------------+
+|                                       |
+|            U0Rxd, GPIO3  7 ---O   O --|--8 Vcc
+|                                       |
+|          SPI_CS2, GPIO0  5 ---O   O --|--6 Ext_RST
+|                                       |
+|       LED, U1Txd, GPIO2  3 ---O   O --|--4 Chip_EN, CH_PD
+|                                       |
+|                     GND  1 ---O   O --|--2 GPIO1, U0Txd, SPI_CS1
+|                                       |
++---------------------------------------+
+```
+
+Connected pins:
+* 1 - GND
+* 8 - Vcc
+* 7 - UART Rx for data, with pullup to 3.3V
