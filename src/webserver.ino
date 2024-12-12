@@ -13,6 +13,7 @@ bool ws_nothing_sent_yet;
 
 void webserver_setup() {
   server.on(F("/"), ws_handle_root);
+  server.on(F("/about"), ws_handle_about);
   server.on(F("/history"), ws_handle_hist);
   server.on(F("/meter"), ws_handle_meter);
   server.on(F("/restart"), ws_handle_restart);
@@ -116,6 +117,7 @@ void ws_render_html(const char *filename) {
 void ws_handle_root() { ws_render_html(("index.html")); }
 void ws_handle_hist() { ws_render_html(("history.html")); }
 void ws_handle_meter() { ws_render_html(("meter.html")); }
+void ws_handle_about() { ws_render_html(("about.html")); }
 
 void ws_handle_restart() {
   server.send(200, F("text/plain"), F("restarting..."));

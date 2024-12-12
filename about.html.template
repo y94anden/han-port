@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Elförbrukning - Om</title>
+    <script src="https://englund.mooo.com/static/stock/Chart.js"></script>
+</head>
+
+<body>
+    <h1>Om systemet</h1>
+    <table>
+        <tr>
+            <th>Compile time:</th>
+            <td>{compile_time}</td>
+        </tr>
+        <tr>
+            <th>Git commit:</th>
+            <td>{git_commit}</td>
+        </tr>
+        <tr>
+            <th>Git remote:</th>
+            <td>{git_remote}</td>
+        </tr>
+    </table>
+    <a href="{{{{X-Sub-Path}}}}/">Index</a>
+</body>
+
+</html>
