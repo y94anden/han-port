@@ -49,3 +49,5 @@ Connected pins:
 * 8 - Vcc
 * 7 - UART Rx for data, with pullup to 3.3V
 * 5 - GPIO output
+
+![Schematics](han-port-schematics.drawio.png)
