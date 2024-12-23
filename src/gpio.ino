@@ -5,14 +5,8 @@ void gpio_setup() {
   gpio_off();
 }
 
-void gpio_on() {
-  digitalWrite(GPIO_PIN, HIGH);
-  led_on();
-}
+void gpio_on() { digitalWrite(GPIO_PIN, HIGH); }
 
-void gpio_off() {
-  digitalWrite(GPIO_PIN, LOW);
-  led_off();
-}
+void gpio_off() { digitalWrite(GPIO_PIN, LOW); }
 
 bool gpio_state() { return digitalRead(GPIO_PIN) == HIGH; }

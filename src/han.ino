@@ -243,13 +243,13 @@ uint32_t han_parse_milli_int() {
 void han_parse() {
   if (han_compare("/", true)) {
     // Meter ID.
-    // led_on();
+    led_on();
   } else if (han_compare("!", true)) {
     // Checksum. Copy tmp struct to current.
     han_last = han_tmp;
     han_add_sample();
     memset(&han_tmp, 0, sizeof(han_tmp));
-    // led_off();
+    led_off();
   } else if (han_compare("0-0:1.0.0(", true)) {
     // time
     han_parse_time();
