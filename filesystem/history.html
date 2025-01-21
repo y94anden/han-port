@@ -110,7 +110,8 @@
 
 	function received(arrayBuffer, name) {
 		const uintArray = new Uint16Array(arrayBuffer);
-		allData[name] = Array.from(uintArray).map(x => x / 1000)
+		// Last 20 bytes is the time. Skip it.
+		allData[name] = Array.from(uintArray).map(x => x / 1000).slice(0, -20)
 		process();
 	}
 

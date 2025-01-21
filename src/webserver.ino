@@ -241,7 +241,8 @@ void ws_handle_seed_new() {
 void ws_handle_history(bool wrapped, uint32_t write, uint32_t buflen,
                        uint8_t *buf, uint8_t datasize) {
   int len = wrapped ? buflen : write;
-  server.setContentLength(len * datasize); // 8, 16 or 32 bit data
+  server.setContentLength(len * datasize +
+                          sizeof(han_last.time)); // 8, 16 or 32 bit data
 
   server.sendHeader("Cache-Control", String("no-cache"));
   server.sendHeader("Access-Control-Allow-Origin", String("*"));
@@ -254,6 +255,7 @@ void ws_handle_history(bool wrapped, uint32_t write, uint32_t buflen,
   }
   // Send the data from 0 and up until latest.
   server.sendContent((const char *)buf, write * datasize);
+  server.sendContent(han_last.time, sizeof(han_last.time));
   server.sendContent(F(""));
   server.client().stop();
 }
