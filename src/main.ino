@@ -7,6 +7,7 @@ void setup() {
   ota_setup();
   webserver_setup();
   han_setup();
+  entropy_setup();
 }
 
 void loop() {

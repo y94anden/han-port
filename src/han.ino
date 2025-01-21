@@ -142,6 +142,8 @@ void han_add_sample() {
 
   // Check if it is time to add new meter sample
   han_check_if_time_to_add_meter_sample();
+
+  entropy_add((uint8_t *)&han_last, sizeof(han_last));
 }
 
 int han_available() {
