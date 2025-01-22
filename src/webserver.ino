@@ -21,8 +21,9 @@ void webserver_setup() {
   server.on(F("/rest/current"), ws_handle_rest_last);
   server.on(F("/rest/gpio"), ws_handle_rest_gpio);
   server.on(F("/rest/entropy"), ws_handle_rest_entropy);
-  server.on(F("/rest/seed"), ws_handle_seed);
-  server.on(F("/rest/seed/new"), ws_handle_seed_new);
+  server.on(F("/rest/seed"), ws_handle_rest_seed);
+  server.on(F("/rest/seed/new"), ws_handle_rest_seed_new);
+  server.on(F("/rest/seed/del"), ws_handle_rest_seed_del);
   server.on(F("/history/full"), ws_handle_history_full);
   server.on(F("/history/1"), ws_handle_history_1);
   server.on(F("/history/2"), ws_handle_history_2);
@@ -221,9 +222,22 @@ void ws_handle_rest_entropy() {
   server.client().stop();
 }
 
-void ws_handle_seed() {
+static void reply_missing_id() {
+  sprintf(tmp_buf, "{\"error\":\"Missing argument 'id'\"}");
+  server.setContentLength(strlen(tmp_buf));
+  server.sendHeader("Cache-Control", String("no-cache"));
+  server.send(200, "text/json", tmp_buf);
+  server.sendContent(F(""));
+  server.client().stop();
+}
+
+void ws_handle_rest_seed() {
+  if (!server.hasArg("id")) {
+    reply_missing_id();
+    return;
+  }
   char buf[65];
-  entropy_seed_get_hex(buf, sizeof(buf));
+  entropy_seed_get_hex(server.arg("id").c_str(), buf, sizeof(buf));
 
   sprintf(tmp_buf, "{\"seed\":\"%s\"}", buf);
   server.setContentLength(strlen(tmp_buf));
@@ -233,9 +247,22 @@ void ws_handle_seed() {
   server.client().stop();
 }
 
-void ws_handle_seed_new() {
-  entropy_seed_new();
-  ws_handle_seed();
+void ws_handle_rest_seed_new() {
+  if (!server.hasArg("id")) {
+    reply_missing_id();
+    return;
+  }
+  entropy_seed_new(server.arg("id").c_str());
+  ws_handle_rest_seed();
+}
+
+void ws_handle_rest_seed_del() {
+  if (!server.hasArg("id")) {
+    reply_missing_id();
+    return;
+  }
+  entropy_seed_del(server.arg("id").c_str());
+  ws_handle_rest_seed();
 }
 
 void ws_handle_history(bool wrapped, uint32_t write, uint32_t buflen,
