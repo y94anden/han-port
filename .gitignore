@@ -2,3 +2,4 @@
 .pio/
 .vscode/
 filesystem/about.html
+src/authentications.secret
